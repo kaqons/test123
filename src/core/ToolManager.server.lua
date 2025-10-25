@@ -1,15 +1,21 @@
 -- src/core/ToolManager.server.lua
 
+local HttpService = game:GetService("HttpService")
+local ArgumentHandler = require(script.Parent.ArgumentHandler)
+
 local ToolManager = {}
 
 local toolsFolder = script.Parent.Parent.tools
 local tools = {}
 
 function ToolManager.loadTools()
+    if #table.getn(tools) > 0 then return end -- Avoid reloading
     for _, toolModule in ipairs(toolsFolder:GetChildren()) do
         if toolModule:IsA("ModuleScript") then
-            local tool = require(toolModule)
-            tools[tool.Name] = tool
+            local success, tool = pcall(require, toolModule)
+            if success and tool.Name then
+                tools[tool.Name] = tool
+            end
         end
     end
 end
@@ -19,34 +25,27 @@ function ToolManager.getTools()
 end
 
 function ToolManager.executeTool(toolName, args)
-    if tools[toolName] and tools[toolName].Execute then
-        local validationError = ToolManager.validateArgs(tools[toolName], args)
-        if validationError then
-            return "Error: " .. validationError
-        end
-        local success, result = pcall(tools[toolName].Execute, args)
-        if success then
-            return result
-        else
-            return "Error executing tool: " .. tostring(result)
-        end
+    if not tools[toolName] or not tools[toolName].Execute then
+        return "Error: Tool '" .. tostring(toolName) .. "' not found."
+    end
+
+    local tool = tools[toolName]
+
+    -- Use the ArgumentHandler to validate and convert the arguments
+    local success, processedArgsOrError = ArgumentHandler.process(tool, args)
+
+    if not success then
+        return "Argument Error: " .. processedArgsOrError
+    end
+
+    -- Execute the tool with the correctly typed arguments
+    local executeSuccess, result = pcall(tool.Execute, processedArgsOrError)
+
+    if executeSuccess then
+        return result
     else
-        return "Error: Tool not found."
+        return "Error executing tool '" .. tool.Name .. "': " .. tostring(result)
     end
 end
-
-function ToolManager.validateArgs(tool, args)
-    for _, argDef in ipairs(tool.Arguments) do
-        if not args[argDef.Name] then
-            return `Missing argument '${argDef.Name}' for tool '${tool.Name}'.`
-        end
-        if type(args[argDef.Name]) ~= argDef.Type then
-            -- This is a basic type check. A more robust solution would be needed for complex types.
-            -- For now, we'll just check for the existence of the argument.
-        end
-    end
-    return nil
-end
-
 
 return ToolManager

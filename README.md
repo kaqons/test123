@@ -15,7 +15,10 @@ Welcome to the Roblox Studio AI Assistant Plugin! This powerful tool integrates 
 To install the plugin, you must place the plugin's source code into your local Roblox Studio plugins folder.
 
 1.  **Download the Plugin:**
-    *   Download the latest version of the plugin from the [releases page](<link_to_releases_page>) or clone this repository.
+    *   Go to the main page of the [plugin's GitHub repository](https://github.com/kaqons/test123/tree/roblox-ai-plugin).
+    *   Click the green "<> Code" button.
+    *   Select "Download ZIP" from the dropdown menu.
+    *   Unzip the downloaded file on your computer. The plugin source code will be inside a folder named something like `test123-roblox-ai-plugin`.
 
 2.  **Find Your Local Plugins Folder:**
     *   **Windows:** `C:\Users\<YourUsername>\AppData\Local\Roblox\Plugins`
