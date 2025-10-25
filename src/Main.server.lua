@@ -47,6 +47,7 @@ local remotes = require(script.Parent.remotes)
 -- Connect the AI service to the remote function
 local AI = require(script.Parent.core.AI)
 local Memory = require(script.Parent.core.Memory)
+Memory.initialize(plugin) -- Initialize the memory module with the plugin object
 local currentChatId = "default" -- Placeholder
 
 remotes.GetAICompletion.OnServerInvoke = function(player, messages)

@@ -6,87 +6,107 @@ local ToolManager = require(script.Parent.ToolManager)
 
 local AI = {}
 
+-- Helper to convert the chat history to Gemini's 'contents' format
+local function formatMessagesForGemini(messages)
+    local contents = {}
+    for _, msg in ipairs(messages) do
+        local role = (msg.role == "assistant") and "model" or "user"
+        table.insert(contents, {
+            role = role,
+            parts = { { text = msg.content } }
+        })
+    end
+    return contents
+end
+
 function AI.getCompletion(messages)
     ToolManager.loadTools()
     local tools = ToolManager.getTools()
-    local systemPrompt = config.DEFAULT_PROMPT .. "\n\nAvailable tools:\n"
+
+    -- Updated system prompt to request JSON for tool calls
+    local systemInstructionText = config.DEFAULT_PROMPT ..
+        "\n\nWhen you need to use a tool, respond ONLY with a JSON object in the following format: " ..
+        "{\"toolName\": \"name_of_the_tool\", \"args\": {\"argName1\": \"value1\", \"argName2\": value2}}. " ..
+        "Do not include any other text, just the JSON. Available tools:\n"
 
     for toolName, tool in pairs(tools) do
-        systemPrompt = systemPrompt .. `- ${toolName}: ${tool.Description}\n`
+        systemInstructionText = systemInstructionText .. `- ${toolName}: ${tool.Description}\n`
         for _, arg in ipairs(tool.Arguments) do
-            systemPrompt = systemPrompt .. `  - ${arg.Name} (${arg.Type}): ${arg.Description}\n`
+            systemInstructionText = systemInstructionText .. `  - ${arg.Name} (${arg.Type}): ${arg.Description}\n`
         end
     end
 
-    local fullMessages = {
-        { role = "system", content = systemPrompt }
-    }
-    for _, msg in ipairs(messages) do
-        table.insert(fullMessages, msg)
-    end
-
-    local headers = {
-        ["Content-Type"] = "application/json",
-        ["Authorization"] = "Bearer " .. config.API_KEY
-    }
-
     local body = {
-        model = config.AI_MODEL,
-        messages = fullMessages,
-        max_tokens = config.MAX_TOKENS,
-        temperature = config.TEMPERATURE
+        contents = formatMessagesForGemini(messages),
+        systemInstruction = {
+            parts = {
+                { text = systemInstructionText }
+            }
+        },
+        generationConfig = {
+            temperature = config.TEMPERATURE,
+            maxOutputTokens = config.MAX_OUTPUT_TOKENS,
+        },
+        thinkingConfig = config.THINKING_CONFIG
     }
+
+    local url = config.API_ENDPOINT .. "?key=" .. config.API_KEY
 
     local success, response
     for i = 1, 3 do -- Retry up to 3 times
         success, response = pcall(function()
             return HttpService:RequestAsync({
-                Url = config.API_ENDPOINT,
+                Url = url,
                 Method = "POST",
-                Headers = headers,
+                Headers = { ["Content-Type"] = "application/json" },
                 Body = HttpService:JSONEncode(body),
                 RequestType = Enum.HttpRequestType.Default,
-                HttpContentType = Enum.HttpContentType.ApplicationJson,
-                Timeout = 10 -- Add a 10-second timeout
+                Timeout = 20
             })
         end)
-        if success and response.Success then
+        if success and response and response.Success then
             break
         end
         wait(1)
     end
 
-    if success and response.Success then
+    if success and response and response.Success then
         local decodedResponse = HttpService:JSONDecode(response.Body)
-        if decodedResponse and decodedResponse.choices and #decodedResponse.choices > 0 then
-            local content = decodedResponse.choices[1].message.content
-            return AI.handleResponse(content)
+        if decodedResponse and decodedResponse.candidates and #decodedResponse.candidates > 0 then
+            local candidate = decodedResponse.candidates[1]
+            if candidate.content and candidate.content.parts and #candidate.content.parts > 0 then
+                local content = candidate.content.parts[1].text
+                return AI.handleResponse(content)
+            else
+                return "Error: AI response was empty. Finish reason: " .. tostring(candidate.finishReason)
+            end
         else
-            return "Error: Invalid response from AI service. " .. (decodedResponse and decodedResponse.error and decodedResponse.error.message or "")
+            return "Error: Invalid response format from Gemini service. Body: " .. response.Body
         end
     else
-        return "Error: Failed to get response from AI service. " .. (response and response.Body or tostring(response))
+        local errorMsg = "Error: Failed to get response from Gemini service."
+        if response then
+             errorMsg = errorMsg .. " Details: " .. response.Body
+        else
+            errorMsg = errorMsg .. " An unknown error occurred."
+        end
+        return errorMsg
     end
 end
 
 function AI.handleResponse(response)
-    -- Check for tool commands
-    if string.sub(response, 1, string.len(config.TOOL_PREFIX)) == config.TOOL_PREFIX then
-        local command = string.sub(response, string.len(config.TOOL_PREFIX) + 1)
-        local parts = string.split(command, " ")
-        local toolName = parts[1]
-        local args = {}
+    -- Attempt to decode the response as a JSON object for tool execution
+    local success, decodedJson = pcall(function()
+        return HttpService:JSONDecode(response)
+    end)
 
-        -- A more robust argument parser would be needed for complex arguments
-        for i = 2, #parts do
-            local argParts = string.split(parts[i], "=")
-            if #argParts == 2 then
-                args[argParts[1]] = argParts[2]
-            end
-        end
-
+    if success and type(decodedJson) == "table" and decodedJson.toolName and decodedJson.args then
+        -- It's a valid tool call, execute it
+        local toolName = decodedJson.toolName
+        local args = decodedJson.args
         return ToolManager.executeTool(toolName, args)
     else
+        -- Not a JSON tool call, so treat it as a regular text response
         return response
     end
 end
