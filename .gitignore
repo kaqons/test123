@@ -1,0 +1,47 @@
+# Roblox-specific ignores
+.rbxl
+.rbxlx
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+*.lua.rbx
+*.luac
+
+# General ignores
+.DS_Store
+.idea/
+.vscode/
+*.suo
+*.user
+*.userprefs
+*.backup
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Build artifacts
+build/
+dist/
+out/
+bin/
+obj/
+
+# Node.js
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Caching
+.cache/
+npm-cache/
+yarn-cache/
+cache/
+
+# User-specific files
+.env
+local.properties
+.secret
+*.private
