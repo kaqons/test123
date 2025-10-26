@@ -76,10 +76,10 @@ end
 
 -- ====== SERVER-SIDE LOGIC ====== --
 local coreFolder = srcFolder:FindFirstChild("core")
-local remotesFolder = srcFolder:FindFirstChild("remotes")
+local remotesModule = require(srcFolder:FindFirstChild("remotes.server"))
 
 -- Initialize remotes
-local remotes = require(remotesFolder)
+local remotes = remotesModule.initialize()
 
 -- Connect the AI service to the remote function
 local AI = require(coreFolder:FindFirstChild("AI"))
