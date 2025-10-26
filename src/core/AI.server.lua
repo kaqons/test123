@@ -9,7 +9,7 @@ local AI = {}
 -- Helper to convert the chat history to Gemini's 'contents' format
 local function formatMessagesForGemini(messages)
     local contents = {}
-    for _, msg in ipairs(messages) do
+    for _, msg in ipairs(messages)
         local role = (msg.role == "assistant") and "model" or "user"
         table.insert(contents, {
             role = role,
@@ -30,9 +30,9 @@ function AI.getCompletion(messages)
         "Do not include any other text, just the JSON. Available tools:\n"
 
     for toolName, tool in pairs(tools) do
-        systemInstructionText = systemInstructionText .. `- ${toolName}: ${tool.Description}\n`
+        systemInstructionText = systemInstructionText .. "- " .. toolName .. ": " .. tool.Description .. "\n"
         for _, arg in ipairs(tool.Arguments) do
-            systemInstructionText = systemInstructionText .. `  - ${arg.Name} (${arg.Type}): ${arg.Description}\n`
+            systemInstructionText = systemInstructionText .. "  - " .. arg.Name .. " (" .. arg.Type .. "): " .. arg.Description .. "\n"
         end
     end
 

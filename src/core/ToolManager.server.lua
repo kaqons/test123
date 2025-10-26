@@ -9,7 +9,7 @@ local toolsFolder = script.Parent.Parent.tools
 local tools = {}
 
 function ToolManager.loadTools()
-    if #table.getn(tools) > 0 then return end -- Avoid reloading
+    if next(tools) ~= nil then return end -- Correct way to check if a dictionary-style table is not empty
     for _, toolModule in ipairs(toolsFolder:GetChildren()) do
         if toolModule:IsA("ModuleScript") then
             local success, tool = pcall(require, toolModule)

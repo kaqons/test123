@@ -14,7 +14,7 @@ local typeConverters = {
              return Vector3.new(val[1], val[2], val[3])
         else
             -- Try to parse from a string like "x,y,z"
-            local parts = tostring(val):split(",")
+            local parts = string.split(tostring(val), ",")
             if #parts == 3 then
                 return Vector3.new(tonumber(parts[1]), tonumber(parts[2]), tonumber(parts[3]))
             end
@@ -28,7 +28,7 @@ local typeConverters = {
             return Color3.fromRGB(val[1], val[2], val[3])
         else
             -- Try to parse from a string like "r,g,b"
-            local parts = tostring(val):split(",")
+            local parts = string.split(tostring(val), ",")
             if #parts == 3 then
                 return Color3.fromRGB(tonumber(parts[1]), tonumber(parts[2]), tonumber(parts[3]))
             end
@@ -53,17 +53,17 @@ function ArgumentHandler.process(tool, args)
         local rawValue = args[argName]
 
         if rawValue == nil then
-            return false, `Missing required argument '${argName}' for tool '${tool.Name}'.`
+            return false, "Missing required argument '" .. argName .. "' for tool '" .. tool.Name .. "'."
         end
 
         local converter = typeConverters[argType]
         if not converter then
-            return false, `Unknown argument type '${argType}' for tool '${tool.Name}'.`
+            return false, "Unknown argument type '" .. argType .. "' for tool '" .. tool.Name .. "'."
         end
 
         local convertedValue = converter(rawValue)
         if convertedValue == nil then
-            return false, `Invalid value for argument '${argName}'. Expected type '${argType}', but got '${tostring(rawValue)}'.`
+            return false, "Invalid value for argument '" .. argName .. "'. Expected type '" .. argType .. "', but got '" .. tostring(rawValue) .. "'."
         end
 
         convertedArgs[argName] = convertedValue

@@ -30,16 +30,12 @@ button.Click:Connect(function()
 end)
 
 -- Load the UI
-local Roact = require(script.Parent.lib.Roact)
-local MainFrame = require(script.Parent.ui.MainFrame)
-
-local app = Roact.createElement(MainFrame)
-local handle = Roact.mount(app, widget, "AI_Assistant_UI")
-
--- Unmount the component when the plugin is unloaded
-plugin.Unloading:Connect(function()
-    Roact.unmount(handle)
-end)
+-- Create and parent the client script to the widget.
+-- This will handle all the client-side UI logic.
+local clientScript = Instance.new("LocalScript")
+clientScript.Name = "Client"
+clientScript.Source = script.Parent.ui.Client.Source
+clientScript.Parent = widget
 
 -- Initialize remotes
 local remotes = require(script.Parent.remotes)
