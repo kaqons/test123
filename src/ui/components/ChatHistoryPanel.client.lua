@@ -1,7 +1,11 @@
 -- src/ui/components/ChatHistoryPanel.client.lua
 
-local Roact = require("Roact")
-local config = require("config")
+local componentsFolder = script.Parent
+local uiFolder = componentsFolder.Parent
+local libFolder = uiFolder.Parent.lib
+
+local Roact = require(libFolder.Roact)
+local config = require(uiFolder.Parent.config)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local getChatList = ReplicatedStorage:WaitForChild("AI_Remotes"):WaitForChild("GetChatList")

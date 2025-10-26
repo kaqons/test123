@@ -1,8 +1,9 @@
 -- Main.server.lua
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 
 -- Create a unique folder in ReplicatedStorage for our UI modules
-local SHARED_UI_FOLDER_NAME = "RobloxAIPlugin_SharedUI_" .. plugin:GetPluginId()
+local SHARED_UI_FOLDER_NAME = "RobloxAIPlugin_SharedUI_" .. HttpService:GenerateGUID(false)
 local sharedUiFolder = Instance.new("Folder")
 sharedUiFolder.Name = SHARED_UI_FOLDER_NAME
 sharedUiFolder.Parent = ReplicatedStorage
@@ -23,6 +24,10 @@ if libFolder then
 end
 if uiFolder then
     uiFolder:Clone().Parent = sharedUiFolder
+end
+local configFile = srcFolder:FindFirstChild("config.lua")
+if configFile then
+    configFile:Clone().Parent = sharedUiFolder
 end
 
 -- Create a new toolbar for the plugin
@@ -55,28 +60,32 @@ button.Click:Connect(function()
 end)
 
 -- Create and parent the client script to the widget.
--- This script will now load all its modules from the shared folder.
 if uiFolder then
     local clientScriptSource = uiFolder:FindFirstChild("Client.client.lua")
     if clientScriptSource then
         local clientScript = Instance.new("LocalScript")
         clientScript.Name = "Client"
-        -- Pass the name of the shared folder as a variable in the script's source
-        clientScript.Source = "local SHARED_UI_FOLDER_NAME = '" .. SHARED_UI_FOLDER_NAME .. "'\n" .. clientScriptSource.Source
+        clientScript.Source = clientScriptSource.Source
         clientScript.Parent = widget
+        -- Pass the shared folder to the client script
+        clientScript:SetAttribute("SharedUiFolder", sharedUiFolder)
     else
         warn("AI Plugin: Client.client.lua not found in ui folder.")
     end
 end
 
 -- ====== SERVER-SIDE LOGIC ====== --
+local coreFolder = srcFolder:FindFirstChild("core")
+local remotesFolder = srcFolder:FindFirstChild("remotes")
 
 -- Initialize remotes
-local remotes = require(srcFolder:FindFirstChild("remotes"))
+local remotes = require(remotesFolder)
 
 -- Connect the AI service to the remote function
-local AI = require(srcFolder:FindFirstChild("core"):FindFirstChild("AI"))
-local Memory = require(srcFolder:FindFirstChild("core"):FindFirstChild("Memory"))
+local AI = require(coreFolder:FindFirstChild("AI"))
+local Memory = require(coreFolder:FindFirstChild("Memory"))
+local ToolManager = require(coreFolder:FindFirstChild("ToolManager"))
+ToolManager.loadTools(srcFolder)
 Memory.initialize(plugin) -- Initialize the memory module with the plugin object
 local currentChatId = "default" -- Placeholder
 

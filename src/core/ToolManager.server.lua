@@ -1,6 +1,7 @@
 -- src/core/ToolManager.server.lua
 
-local ArgumentHandler = require(script.Parent.ArgumentHandler)
+local coreFolder = script.Parent
+local ArgumentHandler = require(coreFolder:FindFirstChild("ArgumentHandler"))
 
 local ToolManager = {}
 

@@ -1,9 +1,10 @@
 -- src/core/AI.server.lua
 
 local HttpService = game:GetService("HttpService")
-local srcFolder = script.Parent.Parent
+local coreFolder = script.Parent
+local srcFolder = coreFolder.Parent
 local config = require(srcFolder:FindFirstChild("config"))
-local ToolManager = require(srcFolder:FindFirstChild("core"):FindFirstChild("ToolManager"))
+local ToolManager = require(coreFolder:FindFirstChild("ToolManager"))
 
 local AI = {}
 
@@ -21,7 +22,7 @@ local function formatMessagesForGemini(messages)
 end
 
 function AI.getCompletion(messages)
-    ToolManager.loadTools(srcFolder)
+    -- ToolManager is now loaded from the Main server script
     local tools = ToolManager.getTools()
 
     -- Updated system prompt to request JSON for tool calls
@@ -75,7 +76,7 @@ function AI.getCompletion(messages)
         local decodedResponse = HttpService:JSONDecode(response.Body)
         if decodedResponse and decodedResponse.candidates and #decodedResponse.candidates > 0 then
             local candidate = decodedResponse.candidates[1]
-            if candidate.content and candidate.content.parts and #decodedResponse.candidates > 0 then
+            if candidate.content and candidate.content.parts and #candidate.content.parts > 0 then
                 local content = candidate.content.parts[1].text
                 return AI.handleResponse(content)
             else

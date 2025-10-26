@@ -1,33 +1,15 @@
 -- src/ui/Client.client.lua
 
--- This variable is injected by Main.server.lua
-local SHARED_UI_FOLDER_NAME = SHARED_UI_FOLDER_NAME
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Wait for the shared folder to be created
-local sharedUiFolder = ReplicatedStorage:WaitForChild(SHARED_UI_FOLDER_NAME, 30)
+-- The shared folder is passed as an attribute from the server script
+local sharedUiFolder = script:GetAttribute("SharedUiFolder")
 if not sharedUiFolder then
-    error("AI Plugin: Failed to find the shared UI folder in ReplicatedStorage.")
+    error("AI Plugin: Client script did not receive the SharedUiFolder attribute.")
     return
 end
 
--- Define the paths for easy access
-local paths = {
-    lib = sharedUiFolder:WaitForChild("lib"),
-    ui = sharedUiFolder:WaitForChild("ui"),
-    components = sharedUiFolder:WaitForChild("ui"):WaitForChild("components")
-}
-
--- Add the paths to the package path so require can find them
-package.path = package.path .. ";" .. paths.lib:GetFullName() .. "?.lua"
-package.path = package.path .. ";" .. paths.ui:GetFullName() .. "?.lua"
-package.path = package.path .. ";" .. paths.components:GetFullName() .. "?.lua"
-
-
--- Now we can require the modules using their names
-local Roact = require("Roact")
-local MainFrame = require("MainFrame")
+-- Now we can require modules using relative paths from the shared folder's children
+local Roact = require(sharedUiFolder.lib.Roact)
+local MainFrame = require(sharedUiFolder.ui.MainFrame)
 
 -- The script's parent is the plugin widget.
 local target = script.Parent
