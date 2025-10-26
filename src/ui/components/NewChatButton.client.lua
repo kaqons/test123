@@ -1,7 +1,7 @@
 -- src/ui/components/NewChatButton.client.lua
 
-local Roact = require(script.Parent.Parent.Parent.lib.Roact)
-local config = require(script.Parent.Parent.Parent.config)
+local Roact = require("Roact")
+local config = require("config")
 
 local NewChatButton = Roact.Component:extend("NewChatButton")
 

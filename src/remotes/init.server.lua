@@ -12,4 +12,19 @@ local getAICompletion = Instance.new("RemoteFunction")
 getAICompletion.Name = "GetAICompletion"
 getAICompletion.Parent = remotesFolder
 
+-- Create the remote function for getting the chat list
+local getChatList = Instance.new("RemoteFunction")
+getChatList.Name = "GetChatList"
+getChatList.Parent = remotesFolder
+
+-- Create the remote function for loading a chat
+local loadChat = Instance.new("RemoteFunction")
+loadChat.Name = "LoadChat"
+loadChat.Parent = remotesFolder
+
+-- Create the remote function for creating a new chat
+local createNewChat = Instance.new("RemoteFunction")
+createNewChat.Name = "CreateNewChat"
+createNewChat.Parent = remotesFolder
+
 return remotesFolder

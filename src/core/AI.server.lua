@@ -1,15 +1,16 @@
 -- src/core/AI.server.lua
 
 local HttpService = game:GetService("HttpService")
-local config = require(script.Parent.Parent.config)
-local ToolManager = require(script.Parent.ToolManager)
+local srcFolder = script.Parent.Parent
+local config = require(srcFolder:FindFirstChild("config"))
+local ToolManager = require(srcFolder:FindFirstChild("core"):FindFirstChild("ToolManager"))
 
 local AI = {}
 
 -- Helper to convert the chat history to Gemini's 'contents' format
 local function formatMessagesForGemini(messages)
     local contents = {}
-    for _, msg in ipairs(messages)
+    for _, msg in ipairs(messages) do
         local role = (msg.role == "assistant") and "model" or "user"
         table.insert(contents, {
             role = role,
@@ -20,7 +21,7 @@ local function formatMessagesForGemini(messages)
 end
 
 function AI.getCompletion(messages)
-    ToolManager.loadTools()
+    ToolManager.loadTools(srcFolder)
     local tools = ToolManager.getTools()
 
     -- Updated system prompt to request JSON for tool calls
@@ -74,7 +75,7 @@ function AI.getCompletion(messages)
         local decodedResponse = HttpService:JSONDecode(response.Body)
         if decodedResponse and decodedResponse.candidates and #decodedResponse.candidates > 0 then
             local candidate = decodedResponse.candidates[1]
-            if candidate.content and candidate.content.parts and #candidate.content.parts > 0 then
+            if candidate.content and candidate.content.parts and #decodedResponse.candidates > 0 then
                 local content = candidate.content.parts[1].text
                 return AI.handleResponse(content)
             else

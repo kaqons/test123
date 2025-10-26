@@ -1,10 +1,10 @@
 -- src/ui/MainFrame.client.lua
 
-local Roact = require(script.Parent.Parent.lib.Roact)
-local config = require(script.Parent.Parent.config)
+local Roact = require("Roact")
+local config = require("config")
 
-local NewChatButton = require(script.Parent.components.NewChatButton)
-local ChatHistoryPanel = require(script.Parent.components.ChatHistoryPanel)
+local NewChatButton = require("NewChatButton")
+local ChatHistoryPanel = require("ChatHistoryPanel")
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local getAICompletion = ReplicatedStorage:WaitForChild("AI_Remotes"):WaitForChild("GetAICompletion")

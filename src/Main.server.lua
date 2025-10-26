@@ -1,4 +1,29 @@
 -- Main.server.lua
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Create a unique folder in ReplicatedStorage for our UI modules
+local SHARED_UI_FOLDER_NAME = "RobloxAIPlugin_SharedUI_" .. plugin:GetPluginId()
+local sharedUiFolder = Instance.new("Folder")
+sharedUiFolder.Name = SHARED_UI_FOLDER_NAME
+sharedUiFolder.Parent = ReplicatedStorage
+
+-- Clean up the shared folder when the plugin unloads
+plugin.Unloading:Connect(function()
+    sharedUiFolder:Destroy()
+end)
+
+-- Find the source directories
+local srcFolder = script.Parent
+local libFolder = srcFolder:FindFirstChild("lib")
+local uiFolder = srcFolder:FindFirstChild("ui")
+
+-- Clone the lib and ui folders into the shared location
+if libFolder then
+    libFolder:Clone().Parent = sharedUiFolder
+end
+if uiFolder then
+    uiFolder:Clone().Parent = sharedUiFolder
+end
 
 -- Create a new toolbar for the plugin
 local toolbar = plugin:CreateToolbar("AI Assistant")
@@ -15,10 +40,10 @@ local widgetInfo = DockWidgetPluginGuiInfo.new(
     Enum.InitialDockState.Float, -- Initial dock state
     true,                       -- Enabled
     false,                      -- Override publisher name
-    250,                        -- Initial width
-    400,                        -- Initial height
-    150,                        -- Minimum width
-    150                         -- Minimum height
+    450,                        -- Initial width
+    600,                        -- Initial height
+    300,                        -- Minimum width
+    200                         -- Minimum height
 )
 
 local widget = plugin:CreateDockWidgetPluginGui("AI_Assistant", widgetInfo)
@@ -29,20 +54,29 @@ button.Click:Connect(function()
     widget.Enabled = not widget.Enabled
 end)
 
--- Load the UI
 -- Create and parent the client script to the widget.
--- This will handle all the client-side UI logic.
-local clientScript = Instance.new("LocalScript")
-clientScript.Name = "Client"
-clientScript.Source = script.Parent.ui.Client.Source
-clientScript.Parent = widget
+-- This script will now load all its modules from the shared folder.
+if uiFolder then
+    local clientScriptSource = uiFolder:FindFirstChild("Client.client.lua")
+    if clientScriptSource then
+        local clientScript = Instance.new("LocalScript")
+        clientScript.Name = "Client"
+        -- Pass the name of the shared folder as a variable in the script's source
+        clientScript.Source = "local SHARED_UI_FOLDER_NAME = '" .. SHARED_UI_FOLDER_NAME .. "'\n" .. clientScriptSource.Source
+        clientScript.Parent = widget
+    else
+        warn("AI Plugin: Client.client.lua not found in ui folder.")
+    end
+end
+
+-- ====== SERVER-SIDE LOGIC ====== --
 
 -- Initialize remotes
-local remotes = require(script.Parent.remotes)
+local remotes = require(srcFolder:FindFirstChild("remotes"))
 
 -- Connect the AI service to the remote function
-local AI = require(script.Parent.core.AI)
-local Memory = require(script.Parent.core.Memory)
+local AI = require(srcFolder:FindFirstChild("core"):FindFirstChild("AI"))
+local Memory = require(srcFolder:FindFirstChild("core"):FindFirstChild("Memory"))
 Memory.initialize(plugin) -- Initialize the memory module with the plugin object
 local currentChatId = "default" -- Placeholder
 
@@ -58,32 +92,29 @@ remotes.GetAICompletion.OnServerInvoke = function(player, messages)
 end
 
 -- Remote function to get the chat list
-local getChatList = Instance.new("RemoteFunction")
-getChatList.Name = "GetChatList"
-getChatList.Parent = remotes
-
-getChatList.OnServerInvoke = function(player)
-    return Memory.getChatList()
+local getChatList = remotes:FindFirstChild("GetChatList")
+if getChatList then
+    getChatList.OnServerInvoke = function(player)
+        return Memory.getChatList()
+    end
 end
 
 -- Remote function to load a chat
-local loadChat = Instance.new("RemoteFunction")
-loadChat.Name = "LoadChat"
-loadChat.Parent = remotes
-
-loadChat.OnServerInvoke = function(player, chatId)
-    currentChatId = chatId
-    return Memory.loadChat(chatId)
+local loadChat = remotes:FindFirstChild("LoadChat")
+if loadChat then
+    loadChat.OnServerInvoke = function(player, chatId)
+        currentChatId = chatId
+        return Memory.loadChat(chatId)
+    end
 end
 
 -- Remote function to create a new chat
-local createNewChat = Instance.new("RemoteFunction")
-createNewChat.Name = "CreateNewChat"
-createNewChat.Parent = remotes
-
-createNewChat.OnServerInvoke = function(player)
-    local newChatId = "Chat_" .. tostring(os.time())
-    Memory.addChatToList(newChatId)
-    currentChatId = newChatId
-    return newChatId
+local createNewChat = remotes:FindFirstChild("CreateNewChat")
+if createNewChat then
+    createNewChat.OnServerInvoke = function(player)
+        local newChatId = "Chat_" .. tostring(os.time())
+        Memory.addChatToList(newChatId)
+        currentChatId = newChatId
+        return newChatId
+    end
 end

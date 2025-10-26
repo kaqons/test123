@@ -1,15 +1,23 @@
 -- src/core/ToolManager.server.lua
 
-local HttpService = game:GetService("HttpService")
 local ArgumentHandler = require(script.Parent.ArgumentHandler)
 
 local ToolManager = {}
 
-local toolsFolder = script.Parent.Parent.tools
 local tools = {}
+local toolsFolder = nil
 
-function ToolManager.loadTools()
-    if next(tools) ~= nil then return end -- Correct way to check if a dictionary-style table is not empty
+function ToolManager.loadTools(srcFolder)
+    if next(tools) ~= nil then return end -- Avoid reloading
+    if not toolsFolder then
+        toolsFolder = srcFolder:FindFirstChild("tools")
+    end
+
+    if not toolsFolder then
+        warn("AI Plugin: 'tools' folder not found.")
+        return
+    end
+
     for _, toolModule in ipairs(toolsFolder:GetChildren()) do
         if toolModule:IsA("ModuleScript") then
             local success, tool = pcall(require, toolModule)
